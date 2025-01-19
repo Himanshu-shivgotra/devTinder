@@ -4,21 +4,17 @@ const app = express();
 
 // order matter in routing
 
-app.use("/test", (req, res) => {
-    res.send('Hello from the Server');
-})
 
 app.get('/user', (req, res) => {
+    console.log(req.query);
     res.send({ firstName: "Himanshu", lastName: "Shivgotra" });
 })
 
-app.post('/user', (req, res) => {
-    res.send("Data saved to the database successfully");
+app.get('/user/:id', (req, res) => {
+    console.log(req.params);
+    res.send({ firstName: "Himanshu", lastName: "Shivgotra" });
 })
 
-app.delete('/user', (req, res) => {
-    res.send("Data deleted from the database successfully");
-})
 
 
 app.listen(3000, () => {
