@@ -1,23 +1,37 @@
 const express = require('express');
-const { adminAuth, userAuth } = require('./middlewares/auth');
-
+const { connectDB } = require('./config/database');
 const app = express();
+const User = require('./models/user')
 
-// order matter in routing
 
+app.post("/signup", async (req, res) => {
 
-app.get('/admin/getAllData', adminAuth, (req, res,) => {
-    res.send('Fetched all data !!')
+    const user = new User({
+        firstName: "Dure",
+        lastName: "Shivgotra",
+        emailId: "Dure@gmail.com",
+        password: "dure@123",
+        age: "25",
+        gender: "Female",
+    })
+
+    try {
+        await user.save()
+        res.send("User added Successfully")
+    } catch (err) {
+        res.status(400).send('Error in saving the user', err.message)
+    }
+
 })
 
-app.get('/admin/deleteData', adminAuth, (req, res,) => {
-    res.send('Data deleted')
+connectDB().then(() => {
+    console.log('Database connected.. !!')
+    app.listen(3000, () => {
+        console.log('Server is running on port 3000');
+    })
 })
+    .catch((err) => {
+        console.error('Error in connecting database !!')
+    })
 
-app.get('/user', userAuth, (req, res,) => {
-    res.send('user data send')
-})
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-})
