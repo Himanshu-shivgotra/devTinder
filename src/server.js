@@ -14,7 +14,7 @@ app.post("/signup", async (req, res) => {
         res.send("User added Successfully")
     }
     catch (err) {
-        res.status(400).send('Error in saving the user', err.message)
+        res.status(400).send('Error in saving the user' + err.message)
     }
 })
 
@@ -80,15 +80,23 @@ app.get('/allUsers', async (req, res) => {
 })
 
 // update the user
-app.patch('/user', async (req, res) => {
-    const userId = req.body.userId
+app.patch('/user/:userId', async (req, res) => {
+    const userId = req.params.userId
     const data = req.body
     try {
-        await User.findByIdAndUpdate({ _id: userId }, data)
+        const allowedUpdates = ["userId", "age", "gender", "photoUrl", "about", "skills"];
+        const isUpdateAllowed = Object.keys(data).every((k) => allowedUpdates.includes(k))
+        if (!isUpdateAllowed) {
+            throw new Error("Update user not allowed")
+        }
+        if (data?.skills.length > 10) {
+            throw new Error("Skills cannot be more than 10")
+        }
+        await User.findByIdAndUpdate({ _id: userId }, data, { runValidators: true })
         // await User.findByIdAndUpdate({ userId }, data)
         res.send("User updated successfully")
     } catch (err) {
-        res.status(400).send('Something went wrong')
+        res.status(400).send('Something went wrong :' + err.message)
     }
 })
 
