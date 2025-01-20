@@ -3,18 +3,75 @@ const express = require('express');
 const { connectDB } = require('./config/database');
 const app = express();
 const User = require('./models/user')
+const { validateUserData } = require('./utils/validation')
+const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const { userAuth } = require('./middlewares/auth')
 
 app.use(express.json())
+app.use(cookieParser())
 
 // User signup route
 app.post("/signup", async (req, res) => {
-    const user = new User(req.body)
     try {
+        //validation of data
+        validateUserData(req)
+
+        const { firstName, lastName, emailId, password } = req.body;
+
+        //Encrypt the password
+        const hassedPassword = await bcrypt.hash(password, 10)
+
+
+        //creating a new instance of user data
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: hassedPassword,
+        })
         await user.save()
         res.send("User added Successfully")
     }
     catch (err) {
-        res.status(400).send('Error in saving the user' + err.message)
+        res.status(400).send('Error : ' + err.message)
+    }
+})
+
+app.post('/login', async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+
+        const user = await User.findOne({ emailId: emailId });
+        if (!user) {
+            throw new Error('Invalid credentials')
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (isPasswordValid) {
+
+            const token = await jwt.sign({ _id: user._id }, "Himanshu@devtinder555")
+
+            res.cookie('token', token)
+            res.send('Login successful!!!')
+        } else {
+            throw new Error('Invalid credentials')
+        }
+
+    }
+    catch (err) {
+        res.status(400).send('Error : ' + err.message)
+    }
+})
+
+app.get('/profile', userAuth, async (req, res) => {
+
+    try {
+        const user = req.user;
+        res.send(user)
+    }
+    catch (err) {
+        res.status(400).send('Error : ' + err.message)
     }
 })
 
@@ -54,7 +111,7 @@ app.delete('/user', async (req, res) => {
 app.get('/userById', async (req, res) => {
     const userId = req.body.userId;
     try {
-        console.log(userId)
+
         const users = await User.findById(userId)
         res.send(users)
     }
