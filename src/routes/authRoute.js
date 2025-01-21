@@ -33,27 +33,29 @@ router.post("/signup", async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { emailId, password } = req.body;
-
         const user = await User.findOne({ emailId: emailId });
         if (!user) {
             throw new Error('Invalid credentials')
         }
         const isPasswordValid = await user.validPassword(password)
         if (isPasswordValid) {
-
             const token = await user.getJWT();
-
             res.cookie('token', token)
             res.send('Login successful!!!')
         } else {
             throw new Error('Invalid credentials')
         }
-
     }
     catch (err) {
         res.status(400).send('Error : ' + err.message)
     }
 })
 
+router.post('/logout', async (req, res) => {
+    res.cookie('token', null), {
+        expires: new Date(Date.now()),
+    }
+    res.send('Logout successful')
+})
 
 module.exports = router;
