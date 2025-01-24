@@ -10,7 +10,7 @@ router.post("/signup", async (req, res) => {
         //validation of data
         validateUserData(req)
 
-        const { firstName, lastName, emailId, password } = req.body;
+        const { firstName, lastName, emailId, password, skills, age, gender } = req.body;
 
         //Encrypt the password
         const hassedPassword = await bcrypt.hash(password, 10)
@@ -21,9 +21,17 @@ router.post("/signup", async (req, res) => {
             lastName,
             emailId,
             password: hassedPassword,
+            skills,
+            age,
+            gender,
         })
-        await user.save()
-        res.send("User added Successfully")
+        const savedUser = await user.save()
+        const token = await savedUser.getJWT()
+        res.cookie("token", token, {
+            expires: new Date(Date.now() + 8 * 3600000),
+        });
+
+        res.json({ message: "User Added successfully!", data: savedUser });
     }
     catch (err) {
         res.status(400).send('Error : ' + err.message)
@@ -40,8 +48,10 @@ router.post('/login', async (req, res) => {
         const isPasswordValid = await user.validPassword(password)
         if (isPasswordValid) {
             const token = await user.getJWT();
-            res.cookie('token', token)
-            res.send('Login successful!!!')
+            res.cookie('token', token), {
+                expires: new Date(Date.now() + 8 * 3600000),
+            }
+            res.send(user)
         } else {
             throw new Error('Invalid credentials')
         }
@@ -52,10 +62,11 @@ router.post('/login', async (req, res) => {
 })
 
 router.post('/logout', async (req, res) => {
-    res.cookie('token', null), {
+    res.cookie('token', null, {
         expires: new Date(Date.now()),
-    }
+    })
     res.send('Logout successful')
 })
+
 
 module.exports = router;
